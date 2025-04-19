@@ -22,16 +22,24 @@ export class VideoService {
   private isInitialized = false;
 
   constructor() {
+    // Configure FFmpeg with minimal logging
     this.ffmpeg = new FFmpeg();
+    this.ffmpeg.on('log', () => {}); // Suppress log messages
   }
 
   async initialize() {
     if (this.isInitialized) return;
     
     try {
+      // Suppress console warnings temporarily
+      const originalConsoleWarn = console.warn;
+      console.warn = () => {};
+
       await this.ffmpeg.load();
       this.isInitialized = true;
-      console.log('FFmpeg initialized successfully');
+
+      // Restore console warnings
+      console.warn = originalConsoleWarn;
     } catch (error) {
       console.error('Failed to initialize FFmpeg:', error);
       throw new Error('Failed to initialize FFmpeg');

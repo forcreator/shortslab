@@ -10,6 +10,13 @@ function App() {
   const MAX_CHARS = 200;
 
   useEffect(() => {
+    // Suppress the cross-origin isolation warning
+    const originalConsoleWarn = console.warn;
+    console.warn = (...args) => {
+      if (args[0]?.includes?.('Cross-Origin-Isolation')) return;
+      originalConsoleWarn.apply(console, args);
+    };
+
     const initFFmpeg = async () => {
       try {
         await videoService.initialize();
@@ -21,6 +28,11 @@ function App() {
     };
 
     initFFmpeg();
+
+    // Cleanup
+    return () => {
+      console.warn = originalConsoleWarn;
+    };
   }, []);
 
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {

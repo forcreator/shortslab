@@ -21,12 +21,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: './project/package-lock.json'
 
       - name: Install dependencies
         working-directory: ./project
-        run: npm ci
+        run: |
+          npm install
+          npm ci || npm install
 
       - name: Build project
         working-directory: ./project

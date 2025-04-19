@@ -20,12 +20,34 @@ export default defineConfig({
           next();
         });
       },
+      configurePreviewServer(server) {
+        server.middlewares.use((_req, res, next) => {
+          res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+          res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+          res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+          next();
+        });
+      },
       writeBundle() {
         // Create .nojekyll file
         fs.writeFileSync(path.join('dist', '.nojekyll'), '');
         
-        // Create _headers file
+        // Create _headers file for GitHub Pages
         const headersContent = `/*
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: cross-origin
+  Content-Security-Policy: cross-origin-embedder-policy: require-corp; cross-origin-opener-policy: same-origin
+  Cache-Control: public, max-age=31536000
+  
+/*.js
+  Content-Type: application/javascript
+  Cross-Origin-Embedder-Policy: require-corp
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: cross-origin
+
+/*.wasm
+  Content-Type: application/wasm
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: cross-origin`;
@@ -38,7 +60,8 @@ export default defineConfig({
     headers: {
       'Cross-Origin-Embedder-Policy': 'require-corp',
       'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Resource-Policy': 'cross-origin'
+      'Cross-Origin-Resource-Policy': 'cross-origin',
+      'Content-Security-Policy': 'cross-origin-embedder-policy: require-corp; cross-origin-opener-policy: same-origin'
     },
     proxy: {
       '/api/tts': {

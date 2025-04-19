@@ -19,14 +19,22 @@ type ProgressCallback = (stage: 'image' | 'audio' | 'video' | 'idle', percent: n
 export class VideoService {
   private ffmpeg: FFmpeg;
   private progressCallback?: ProgressCallback;
+  private isInitialized = false;
 
   constructor() {
     this.ffmpeg = new FFmpeg();
   }
 
   async initialize() {
-    if (!this.ffmpeg.loaded) {
+    if (this.isInitialized) return;
+    
+    try {
       await this.ffmpeg.load();
+      this.isInitialized = true;
+      console.log('FFmpeg initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize FFmpeg:', error);
+      throw new Error('Failed to initialize FFmpeg');
     }
   }
 
@@ -42,6 +50,10 @@ export class VideoService {
   }
 
   async generateVideo(options: VideoGenerationOptions): Promise<string> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
     const {
       imageData,
       audioData,
@@ -196,6 +208,7 @@ export class VideoService {
   dispose() {
     if (this.ffmpeg) {
       this.progressCallback = undefined;
+      this.isInitialized = false;
     }
   }
 }

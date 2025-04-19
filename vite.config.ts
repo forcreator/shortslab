@@ -21,15 +21,14 @@ export default defineConfig({
         });
       },
       writeBundle() {
-        // Ensure _headers file exists in dist
+        // Create .nojekyll file
+        fs.writeFileSync(path.join('dist', '.nojekyll'), '');
+        
+        // Create _headers file
         const headersContent = `/*
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: cross-origin`;
-        
-        if (!fs.existsSync('dist')) {
-          fs.mkdirSync('dist');
-        }
         fs.writeFileSync(path.join('dist', '_headers'), headersContent);
       }
     }
@@ -64,7 +63,11 @@ export default defineConfig({
       output: {
         manualChunks: {
           ffmpeg: ['@ffmpeg/ffmpeg', '@ffmpeg/util']
-        }
+        },
+        // Ensure proper file extensions and formats
+        entryFileNames: 'assets/[name].[hash].js',
+        chunkFileNames: 'assets/[name].[hash].js',
+        assetFileNames: 'assets/[name].[hash].[ext]'
       }
     }
   },

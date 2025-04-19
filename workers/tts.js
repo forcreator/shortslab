@@ -9,7 +9,7 @@ async function handleRequest(request) {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Accept',
         'Access-Control-Max-Age': '86400',
       }
     })
@@ -20,7 +20,13 @@ async function handleRequest(request) {
   const text = url.searchParams.get('text')
 
   if (!text) {
-    return new Response('Text parameter is required', { status: 400 })
+    return new Response('Text parameter is required', { 
+      status: 400,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'text/plain'
+      }
+    })
   }
 
   // Construct Google Translate TTS URL
@@ -35,22 +41,40 @@ async function handleRequest(request) {
     const response = await fetch(ttsUrl.toString(), {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-        'Referer': 'https://translate.google.com'
+        'Referer': 'https://translate.google.com',
+        'Accept': 'audio/mpeg'
       }
     })
 
+    if (!response.ok) {
+      return new Response(`Failed to fetch audio: ${response.statusText}`, {
+        status: response.status,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'text/plain'
+        }
+      })
+    }
+
     // Create response with CORS headers
-    const headers = new Headers(response.headers)
+    const headers = new Headers()
     headers.set('Access-Control-Allow-Origin', '*')
     headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS')
-    headers.set('Access-Control-Allow-Headers', '*')
+    headers.set('Access-Control-Allow-Headers', 'Content-Type, Accept')
     headers.set('Cache-Control', 'public, max-age=31536000')
+    headers.set('Content-Type', 'audio/mpeg')
 
     return new Response(response.body, {
-      status: response.status,
+      status: 200,
       headers
     })
   } catch (error) {
-    return new Response('Error fetching audio: ' + error.message, { status: 500 })
+    return new Response('Error fetching audio: ' + error.message, { 
+      status: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'text/plain'
+      }
+    })
   }
 } 

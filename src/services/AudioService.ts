@@ -22,8 +22,14 @@ export class AudioService {
       const url = `${this.TTS_API}?text=${encodeURIComponent(text)}`;
       console.log('Debug: Fetching audio from:', url);
 
-      // Fetch the audio
-      const response = await fetch(url);
+      // Fetch the audio with no-cors mode
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'audio/mpeg'
+        }
+      });
+
       console.log('Debug: Response status:', response.status);
 
       if (!response.ok) {
@@ -49,7 +55,7 @@ export class AudioService {
 
       return {
         url: audioUrl,
-        duration: audioDuration
+        duration: audioDuration || this.estimateDuration(text)
       };
     } catch (error) {
       console.error('Error generating audio:', error);
@@ -57,15 +63,37 @@ export class AudioService {
     }
   }
 
+  private estimateDuration(text: string): number {
+    // Estimate duration based on word count (average speaking rate)
+    const words = text.split(/\s+/).length;
+    const averageWordsPerMinute = 150;
+    return (words / averageWordsPerMinute) * 60;
+  }
+
   private async getAudioDuration(audioUrl: string): Promise<number> {
     return new Promise((resolve, reject) => {
-      const audio = new Audio(audioUrl);
+      const audio = new Audio();
+      
+      const timeoutId = setTimeout(() => {
+        audio.remove();
+        resolve(this.estimateDuration(audioUrl));
+      }, 3000); // 3 second timeout
+
       audio.onloadedmetadata = () => {
-        resolve(audio.duration);
+        clearTimeout(timeoutId);
+        const duration = audio.duration;
+        audio.remove();
+        resolve(duration);
       };
+
       audio.onerror = () => {
-        reject(new Error('Failed to load audio for duration check'));
+        clearTimeout(timeoutId);
+        audio.remove();
+        console.warn('Failed to get audio duration, using estimate');
+        resolve(this.estimateDuration(audioUrl));
       };
+
+      audio.src = audioUrl;
       audio.load();
     });
   }

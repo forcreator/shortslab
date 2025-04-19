@@ -7,11 +7,12 @@ const STABILITY_API_KEY = process.env.VITE_STABILITY_API_KEY;
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: './', // This ensures assets are loaded correctly in production
   server: {
     port: 5173,
     headers: {
       'Cross-Origin-Embedder-Policy': 'require-corp',
-      'Cross-Origin-Opener-Policy': 'same-origin'
+      'Cross-Origin-Opener-Policy': 'same-origin',
     },
     proxy: {
       '/api/tts': {
@@ -29,12 +30,16 @@ export default defineConfig({
     exclude: ['@ffmpeg/ffmpeg', '@ffmpeg/util']
   },
   build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: true,
     target: 'esnext',
     rollupOptions: {
       output: {
         manualChunks: {
-          ffmpeg: ['@ffmpeg/ffmpeg', '@ffmpeg/util']
-        }
+          vendor: ['react', 'react-dom'],
+          ffmpeg: ['@ffmpeg/ffmpeg', '@ffmpeg/util'],
+        },
       }
     }
   },

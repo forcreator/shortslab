@@ -7,7 +7,7 @@ import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/shortslab/',
+  base: './',
   plugins: [
     react(),
     {
@@ -63,11 +63,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           ffmpeg: ['@ffmpeg/ffmpeg', '@ffmpeg/util']
-        },
-        // Ensure proper file extensions and formats
-        entryFileNames: 'assets/[name].[hash].js',
-        chunkFileNames: 'assets/[name].[hash].js',
-        assetFileNames: 'assets/[name].[hash].[ext]'
+        }
       }
     }
   },

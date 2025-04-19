@@ -2,10 +2,10 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // Read API key from environment variable
-const STABILITY_API_KEY = process.env.VITE_STABILITY_API_KEY;
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  base: '/shortslab/',
   plugins: [react()],
   server: {
     port: 5173,
@@ -30,6 +30,8 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
+    outDir: 'dist',
+    assetsDir: 'assets',
     rollupOptions: {
       output: {
         manualChunks: {

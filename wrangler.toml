@@ -1,0 +1,6 @@
+name = "tts"
+main = "workers/tts.js"
+compatibility_date = "2024-02-22"
+
+[triggers]
+crons = [] 

@@ -12,30 +12,22 @@ interface AudioMetadata {
 
 export class AudioService {
   private readonly MAX_TEXT_LENGTH = 200;
+  private readonly TTS_API = 'https://tts.forcreatorspace.workers.dev';
 
   async generateAudio(options: AudioGenerationOptions): Promise<AudioMetadata> {
     try {
       const text = options.text.slice(0, this.MAX_TEXT_LENGTH);
-      const rate = options.rate || 1.0;
       
-      // Use a production-ready TTS service
-      const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=en-US&client=tw-ob&q=${encodeURIComponent(text)}`;
+      // Use Cloudflare Workers proxy for TTS
+      const url = `${this.TTS_API}?text=${encodeURIComponent(text)}`;
+      console.log('Debug: Fetching audio from:', url);
 
-      // Create audio context for browser-based synthesis
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      
-      // Fetch the audio with proper headers
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0',
-          'Referer': 'https://translate.google.com/',
-          'Accept': 'audio/mpeg'
-        }
-      });
+      // Fetch the audio
+      const response = await fetch(url);
+      console.log('Debug: Response status:', response.status);
 
       if (!response.ok) {
-        // Fallback to browser's speech synthesis if fetch fails
-        return this.generateBrowserAudio(text, rate);
+        throw new Error(`Failed to fetch audio: ${response.statusText}`);
       }
 
       // Get the audio data as blob
@@ -44,6 +36,8 @@ export class AudioService {
         throw new Error('Received empty audio data');
       }
 
+      console.log('Debug: Audio blob size:', audioBlob.size);
+
       // Create URL for the audio blob
       const audioUrl = URL.createObjectURL(
         new Blob([audioBlob], { type: 'audio/mpeg' })
@@ -51,7 +45,7 @@ export class AudioService {
 
       // Get audio duration
       const audioDuration = await this.getAudioDuration(audioUrl);
-      console.log(`Generated audio duration: ${audioDuration}s, size: ${audioBlob.size} bytes`);
+      console.log(`Debug: Generated audio duration: ${audioDuration}s`);
 
       return {
         url: audioUrl,
@@ -59,43 +53,8 @@ export class AudioService {
       };
     } catch (error) {
       console.error('Error generating audio:', error);
-      // Fallback to browser's speech synthesis
-      return this.generateBrowserAudio(options.text, options.rate || 1.0);
+      throw error;
     }
-  }
-
-  private async generateBrowserAudio(text: string, rate: number): Promise<AudioMetadata> {
-    return new Promise((resolve, reject) => {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = rate;
-      utterance.lang = 'en-US';
-
-      // Create a blob from the synthesized speech
-      const audioChunks: Blob[] = [];
-      const mediaRecorder = new MediaRecorder(new MediaStream());
-
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunks.push(event.data);
-        }
-      };
-
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        resolve({
-          url: audioUrl,
-          duration: (text.length / 15) * (1 / rate) // Approximate duration based on text length
-        });
-      };
-
-      utterance.onend = () => {
-        mediaRecorder.stop();
-      };
-
-      mediaRecorder.start();
-      window.speechSynthesis.speak(utterance);
-    });
   }
 
   private async getAudioDuration(audioUrl: string): Promise<number> {
@@ -126,7 +85,7 @@ export class AudioService {
       const arrayBuffer = await blob.arrayBuffer();
       const audioData = new Uint8Array(arrayBuffer);
       
-      console.log(`Audio data size: ${audioData.length} bytes`);
+      console.log(`Debug: Audio data size: ${audioData.length} bytes`);
       if (audioData.length === 0) {
         throw new Error('Audio data is empty');
       }

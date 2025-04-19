@@ -7,7 +7,7 @@ const STABILITY_API_KEY = process.env.VITE_STABILITY_API_KEY;
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/shortslab/', // Update this to match your repository name
+  base: '/shortslab/', // Ensure this matches your repository name
   server: {
     port: 5173,
     headers: {
@@ -31,7 +31,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    assetsDir: 'assets',
+    assetsDir: '', // Remove the assets subdirectory
     sourcemap: true,
     target: 'esnext',
     rollupOptions: {
@@ -40,9 +40,10 @@ export default defineConfig({
           vendor: ['react', 'react-dom'],
           ffmpeg: ['@ffmpeg/ffmpeg', '@ffmpeg/util'],
         },
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
+        // Ensure assets are placed in the root of dist
+        entryFileNames: '[name]-[hash].js',
+        chunkFileNames: '[name]-[hash].js',
+        assetFileNames: '[name]-[hash].[ext]'
       }
     }
   },

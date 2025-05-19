@@ -38,7 +38,6 @@ export default defineConfig({
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: cross-origin
-  Content-Security-Policy: cross-origin-embedder-policy: require-corp; cross-origin-opener-policy: same-origin
   Cache-Control: public, max-age=31536000
   
 /*.js

@@ -20,6 +20,16 @@ A powerful web application for creating engaging short-form videos with AI-gener
 - Google Text-to-Speech
 - Pollinations AI for image generation
 
+## Browser Requirements
+
+This application uses modern web features for video processing:
+
+- **SharedArrayBuffer**: Required for FFmpeg WebAssembly processing
+- **Service Workers**: Used to set security headers needed for SharedArrayBuffer
+- **Secure Context**: Must be accessed via HTTPS or localhost
+
+**Supported browsers:** Latest versions of Chrome, Edge, Firefox, and Safari.
+
 ## Getting Started
 
 ### Prerequisites
@@ -37,36 +47,53 @@ cd shortslab
 
 2. Install dependencies:
 ```bash
-cd project
 npm install
 ```
 
-3. Download FFmpeg files:
-
-You need to download the following files and place them in the `public/ffmpeg` directory:
-
-- ffmpeg-core.js: https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js
-- ffmpeg-core.wasm: https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.wasm
-- ffmpeg-core.worker.js: https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.worker.js
-
-You can download these manually or use curl/wget:
-
-```bash
-# Create directory
-mkdir -p public/ffmpeg
-
-# Download files
-curl -o public/ffmpeg/ffmpeg-core.js https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js
-curl -o public/ffmpeg/ffmpeg-core.wasm https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.wasm 
-curl -o public/ffmpeg/ffmpeg-core.worker.js https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.worker.js
-```
-
-4. Start the development server:
+3. Start the development server:
 ```bash
 npm run dev
 ```
 
 The application will be available at `http://localhost:5173`
+
+## Deployment
+
+### GitHub Pages Deployment
+
+This application is configured for GitHub Pages deployment with custom domain support.
+
+1. Update the repository settings in `package.json` with your username:
+```json
+"homepage": "https://yourusername.github.io/shortslab/",
+"repository": {
+  "type": "git",
+  "url": "https://github.com/yourusername/shortslab"
+}
+```
+
+2. For a custom domain, set your domain in `CNAME` and `vite.config.ts`.
+
+3. Deploy to GitHub Pages:
+```bash
+npm run deploy
+```
+
+The deployment workflow will:
+- Build the application
+- Copy FFmpeg files to the correct location
+- Set up service worker for security headers
+- Configure proper MIME types for WebAssembly files
+
+### Security Headers for SharedArrayBuffer
+
+This application requires these security headers for SharedArrayBuffer:
+
+- Cross-Origin-Embedder-Policy: require-corp
+- Cross-Origin-Opener-Policy: same-origin
+- Cross-Origin-Resource-Policy: cross-origin
+
+The service worker applies these headers automatically to enable SharedArrayBuffer.
 
 ## Usage
 
@@ -84,49 +111,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## CORS and Security Headers
-
-This application requires specific security headers to be set on the server:
-
-- Cross-Origin-Embedder-Policy (COEP): require-corp
-- Cross-Origin-Opener-Policy (COOP): same-origin
-
-These headers are needed for SharedArrayBuffer to work, which is required by FFmpeg.
-
-## CORS Issue Solution
-
-This web application uses FFmpeg for video processing, which requires loading WebAssembly modules. You need to place the FFmpeg files in your public directory:
-
-### Step 1: Create the ffmpeg directory
-
-```bash
-mkdir -p public/ffmpeg
-```
-
-### Step 2: Download the FFmpeg files
-
-1. Right-click on each of these links and select "Save Link As..." to save to the public/ffmpeg directory:
-
-   - [ffmpeg-core.js](https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js) → save as `public/ffmpeg/ffmpeg-core.js`
-   - [ffmpeg-core.wasm](https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.wasm) → save as `public/ffmpeg/ffmpeg-core.wasm` 
-   - [ffmpeg-core.worker.js](https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.worker.js) → save as `public/ffmpeg/ffmpeg-core.worker.js`
-
-2. If the links above don't work or return 404s, you can extract these files from the node_modules directory:
-
-```bash
-# Copy from node_modules to public directory
-cp node_modules/@ffmpeg/core/dist/ffmpeg-core.js public/ffmpeg/
-cp node_modules/@ffmpeg/core/dist/ffmpeg-core.wasm public/ffmpeg/
-cp node_modules/@ffmpeg/core/dist/ffmpeg-core.worker.js public/ffmpeg/
-```
-
-### Step 3: Restart your dev server
-
-After placing the files in the correct location, restart your development server:
-
-```bash
-npm run dev
-```
-
-NOTE: These files in the public directory are accessed directly by the browser at runtime. They are not imported in the source code. 

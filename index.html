@@ -25,22 +25,32 @@
         }
       }(window.location))
       
-      // Get the base path for GitHub Pages
+      // Get the base path for GitHub Pages or custom domain
       var getBasePath = function() {
+        // Check if we're on a custom domain
+        if (location.hostname === 'shorts.forcreator.space') {
+          return ''; // No base path needed for custom domain
+        }
+        
         // Get the repository name from the pathname (for GitHub Pages)
         var pathSegments = location.pathname.split('/');
         if (pathSegments.length > 1 && location.hostname.indexOf('github.io') !== -1) {
           return '/' + pathSegments[1]; // Return repo name with leading slash
         }
+        
         return ''; // Return empty string for root
       };
       
       var basePath = getBasePath();
+      console.log('Using base path:', basePath);
       
       // Register service worker for SharedArrayBuffer support
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register(basePath + '/sw.js')
+          var swPath = basePath + '/sw.js';
+          console.log('Registering service worker at:', swPath);
+          
+          navigator.serviceWorker.register(swPath)
             .then(function(registration) {
               console.log('Service Worker registered with scope:', registration.scope);
             })

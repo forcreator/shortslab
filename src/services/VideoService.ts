@@ -32,6 +32,22 @@ export class VideoService {
     this.ffmpeg.on('log', () => {}); // Suppress log messages
   }
 
+  // Get the base path for GitHub Pages or custom domain
+  private getBasePath(): string {
+    // Check if we're on a custom domain
+    if (window.location.hostname === 'shorts.forcreator.space') {
+      return ''; // No base path needed for custom domain
+    }
+    
+    // Get the repository name from the pathname (for GitHub Pages)
+    const pathSegments = window.location.pathname.split('/');
+    if (pathSegments.length > 1 && window.location.hostname.indexOf('github.io') !== -1) {
+      return '/' + pathSegments[1]; // Return repo name with leading slash
+    }
+    
+    return ''; // Return empty string for root
+  }
+
   async initialize() {
     if (this.isInitialized) return;
     
@@ -72,7 +88,8 @@ export class VideoService {
 
       // Get the base URL for loading local files
       const baseURL = window.location.origin;
-      console.log('Loading FFmpeg files from:', baseURL);
+      const basePath = this.getBasePath();
+      console.log('Loading FFmpeg files from:', baseURL + basePath);
       
       try {
         // First try the simple load method (which searches in standard locations)
@@ -84,9 +101,9 @@ export class VideoService {
         
         // If simple load fails, try with explicit paths and CORS settings
         await this.ffmpeg.load({
-          coreURL: `${baseURL}/ffmpeg/ffmpeg-core.js`,
-          wasmURL: `${baseURL}/ffmpeg/ffmpeg-core.wasm`,
-          workerURL: `${baseURL}/ffmpeg/ffmpeg-core.worker.js`
+          coreURL: `${baseURL}${basePath}/ffmpeg/ffmpeg-core.js`,
+          wasmURL: `${baseURL}${basePath}/ffmpeg/ffmpeg-core.wasm`,
+          workerURL: `${baseURL}${basePath}/ffmpeg/ffmpeg-core.worker.js`
         });
         console.log('Explicit path FFmpeg load succeeded');
       }

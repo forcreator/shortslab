@@ -55,25 +55,60 @@ export default defineConfig({
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: cross-origin
-  Cross-Origin-Isolation: require-corp`;
+  Cross-Origin-Isolation: require-corp
+
+/sw.js
+  Content-Type: application/javascript
+  Cache-Control: no-cache, no-store, must-revalidate`;
         fs.writeFileSync(path.join('dist', '_headers'), headersContent);
         
         // Create a GitHub specific CNAME file if needed
-        // fs.writeFileSync(path.join('dist', 'CNAME'), 'yourdomain.com');
+        fs.writeFileSync(path.join('dist', 'CNAME'), 'shorts.forcreator.space');
         
         // Copy the service worker and 404.html to the dist folder
         try {
           if (fs.existsSync('public/sw.js')) {
             fs.copyFileSync('public/sw.js', path.join('dist', 'sw.js'));
             console.log('Copied sw.js to dist folder');
+          } else {
+            console.error('sw.js not found in public folder!');
           }
           
           if (fs.existsSync('public/404.html')) {
             fs.copyFileSync('public/404.html', path.join('dist', '404.html'));
             console.log('Copied 404.html to dist folder');
+          } else {
+            console.error('404.html not found in public folder!');
           }
         } catch (error) {
           console.error('Error copying files:', error);
+        }
+        
+        // Also copy important FFmpeg files to ensure they're available
+        try {
+          // Create ffmpeg directory in dist if it doesn't exist
+          const ffmpegDistDir = path.join('dist', 'ffmpeg');
+          if (!fs.existsSync(ffmpegDistDir)) {
+            fs.mkdirSync(ffmpegDistDir, { recursive: true });
+          }
+          
+          // Copy FFmpeg files
+          fs.copyFileSync(
+            path.join('public', 'ffmpeg', 'ffmpeg-core.js'),
+            path.join(ffmpegDistDir, 'ffmpeg-core.js')
+          );
+          fs.copyFileSync(
+            path.join('public', 'ffmpeg', 'ffmpeg-core.wasm'),
+            path.join(ffmpegDistDir, 'ffmpeg-core.wasm')
+          );
+          fs.copyFileSync(
+            path.join('public', 'ffmpeg', 'ffmpeg-core.worker.js'),
+            path.join(ffmpegDistDir, 'ffmpeg-core.worker.js')
+          );
+          
+          console.log('Copied FFmpeg files to dist/ffmpeg folder');
+        } catch (error) {
+          console.error('Error copying FFmpeg files:', error);
         }
       }
     }

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cross-Origin-Embedder-Policy" content="require-corp">
+    <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+    <meta http-equiv="Cross-Origin-Resource-Policy" content="cross-origin">
+    <meta http-equiv="Cross-Origin-Isolation" content="require-corp">
+    <title>Shorts Lab for Creators</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script type="text/javascript">
+      // Single Page Apps for GitHub Pages
+      // MIT License
+      // https://github.com/rafgraph/spa-github-pages
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) { 
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+      
+      // Get the base path for GitHub Pages
+      var getBasePath = function() {
+        // Get the repository name from the pathname (for GitHub Pages)
+        var pathSegments = location.pathname.split('/');
+        if (pathSegments.length > 1 && location.hostname.indexOf('github.io') !== -1) {
+          return '/' + pathSegments[1]; // Return repo name with leading slash
+        }
+        return ''; // Return empty string for root
+      };
+      
+      var basePath = getBasePath();
+      
+      // Register service worker for SharedArrayBuffer support
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register(basePath + '/sw.js')
+            .then(function(registration) {
+              console.log('Service Worker registered with scope:', registration.scope);
+            })
+            .catch(function(error) {
+              console.error('Service Worker registration failed:', error);
+            });
+        });
+      }
+    </script>
+    <script type="module" crossorigin src="./assets/index-WK3F-d7r.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/ffmpeg-CTMVmLhe.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-CPm1NUjK.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

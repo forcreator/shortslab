@@ -41,18 +41,61 @@ export class VideoService {
         throw new Error('SharedArrayBuffer is not available. Please ensure COEP and COOP headers are set correctly.');
       }
 
-      // Suppress console warnings temporarily
-      const originalConsoleWarn = console.warn;
-      console.warn = () => {};
+      // Check if running in a secure context
+      if (!window.isSecureContext) {
+        throw new Error('FFmpeg requires a secure context (HTTPS or localhost)');
+      }
 
-      await this.ffmpeg.load();
+      // Check headers for COEP and COOP
+      const response = await fetch(window.location.href);
+      const coep = response.headers.get('Cross-Origin-Embedder-Policy');
+      const coop = response.headers.get('Cross-Origin-Opener-Policy');
+      
+      if (coep !== 'require-corp' || coop !== 'same-origin') {
+        console.warn('Security headers not properly set:', { coep, coop });
+      }
+
+      console.log('Initializing FFmpeg...');
+      
+      // Create new FFmpeg instance with minimal configuration
+      this.ffmpeg = new FFmpeg();
+      
+      // Set up logging
+      this.ffmpeg.on('log', ({ message }) => {
+        console.log('FFmpeg Log:', message);
+      });
+      
+      // Set up progress logging
+      this.ffmpeg.on('progress', ({ progress }) => {
+        console.log(`FFmpeg Progress: ${Math.round(progress * 100)}%`);
+      });
+
+      // Get the base URL for loading local files
+      const baseURL = window.location.origin;
+      console.log('Loading FFmpeg files from:', baseURL);
+      
+      try {
+        // First try the simple load method (which searches in standard locations)
+        console.log('Attempting simple FFmpeg load...');
+        await this.ffmpeg.load();
+        console.log('Simple FFmpeg load succeeded');
+      } catch (simpleLoadError) {
+        console.warn('Simple FFmpeg load failed, trying with explicit paths:', simpleLoadError);
+        
+        // If simple load fails, try with explicit paths and CORS settings
+        await this.ffmpeg.load({
+          coreURL: `${baseURL}/ffmpeg/ffmpeg-core.js`,
+          wasmURL: `${baseURL}/ffmpeg/ffmpeg-core.wasm`,
+          workerURL: `${baseURL}/ffmpeg/ffmpeg-core.worker.js`
+        });
+        console.log('Explicit path FFmpeg load succeeded');
+      }
+      
       this.isInitialized = true;
-
-      // Restore console warnings
-      console.warn = originalConsoleWarn;
+      console.log('FFmpeg initialized successfully');
     } catch (error) {
       console.error('Failed to initialize FFmpeg:', error);
-      throw new Error('Failed to initialize FFmpeg. Please ensure your browser supports SharedArrayBuffer and the required security headers are set.');
+      throw new Error(`FFmpeg initialization failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

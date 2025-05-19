@@ -2,14 +2,19 @@ import React, { useState } from 'react';
 import { imageService } from '../services/ImageService';
 import { audioService } from '../services/AudioService';
 import { videoService } from '../services/VideoService';
-import { processText, estimateSentenceDuration, chunkSentences } from '../utils/textProcessor';
+import { processText, estimateSentenceDuration } from '../utils/textProcessor';
+import { validatePrompt, validateOrientation, validateImageStyle } from '../utils/validation';
+import { handleError, getErrorMessage } from '../utils/errorHandler';
+import { IMAGE_CONFIG, VIDEO_CONFIG } from '../utils/constants';
+import LoadingSpinner from './LoadingSpinner';
+import ProgressBar from './ProgressBar';
 
 interface VideoGeneratorProps {
   prompt: string;
   onComplete: (url: string) => void;
 }
 
-type ImageStyle = 'realistic' | 'cartoon' | 'anime' | 'cyberpunk';
+type ImageStyle = typeof IMAGE_CONFIG.STYLES[number];
 
 const VideoGenerator: React.FC<VideoGeneratorProps> = ({ prompt, onComplete }) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -57,10 +62,10 @@ const VideoGenerator: React.FC<VideoGeneratorProps> = ({ prompt, onComplete }) =
         audioData,
         duration,
         text: showCaptions ? sentence : '',
-        fps: 30,
-        totalFrames: duration * 30,
-        width: orientation === 'portrait' ? 1080 : 1920,
-        height: orientation === 'portrait' ? 1920 : 1080,
+        fps: VIDEO_CONFIG.DEFAULT_FPS,
+        totalFrames: duration * VIDEO_CONFIG.DEFAULT_FPS,
+        width: orientation === 'portrait' ? VIDEO_CONFIG.PORTRAIT.WIDTH : VIDEO_CONFIG.LANDSCAPE.WIDTH,
+        height: orientation === 'portrait' ? VIDEO_CONFIG.PORTRAIT.HEIGHT : VIDEO_CONFIG.LANDSCAPE.HEIGHT,
         orientation
       });
 
@@ -80,6 +85,11 @@ const VideoGenerator: React.FC<VideoGeneratorProps> = ({ prompt, onComplete }) =
     setCurrentStage('idle');
 
     try {
+      // Validate inputs
+      validatePrompt(prompt);
+      validateOrientation(orientation);
+      validateImageStyle(style);
+
       // Process the text into sentences
       const { sentences, totalSentences } = processText(prompt);
       console.log(`Processing ${totalSentences} sentences`);
@@ -114,7 +124,7 @@ const VideoGenerator: React.FC<VideoGeneratorProps> = ({ prompt, onComplete }) =
       onComplete(finalVideoUrl);
     } catch (error) {
       console.error('Error generating video:', error);
-      setError('Failed to generate video. Please try again.');
+      setError(getErrorMessage(error));
     } finally {
       setIsGenerating(false);
       setCurrentStage('idle');
@@ -147,10 +157,11 @@ const VideoGenerator: React.FC<VideoGeneratorProps> = ({ prompt, onComplete }) =
             onChange={(e) => setStyle(e.target.value as ImageStyle)}
             className="w-full p-2 rounded-lg bg-gray-900/50 text-white border border-white/5 focus:ring-2 focus:ring-purple-500/20 focus:outline-none"
           >
-            <option value="realistic">Realistic</option>
-            <option value="cartoon">Cartoon</option>
-            <option value="anime">Anime</option>
-            <option value="cyberpunk">Cyberpunk</option>
+            {IMAGE_CONFIG.STYLES.map(style => (
+              <option key={style} value={style}>
+                {style.charAt(0).toUpperCase() + style.slice(1)}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -185,21 +196,7 @@ const VideoGenerator: React.FC<VideoGeneratorProps> = ({ prompt, onComplete }) =
       )}
 
       {isGenerating && (
-        <div className="space-y-4">
-          <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <p className="text-sm text-gray-400 text-center">
-            {currentStage === 'idle' && 'Preparing...'}
-            {currentStage === 'image' && 'Generating video...'}
-            {currentStage === 'audio' && 'Generating audio...'}
-            {currentStage === 'video' && 'Creating video...'}
-            {` (${Math.round(progress)}%)`}
-          </p>
-        </div>
+        <ProgressBar progress={progress} stage={currentStage} />
       )}
 
       <button
@@ -211,7 +208,14 @@ const VideoGenerator: React.FC<VideoGeneratorProps> = ({ prompt, onComplete }) =
             : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-xl'
         }`}
       >
-        {isGenerating ? 'Generating...' : 'Generate Video'}
+        {isGenerating ? (
+          <div className="flex items-center justify-center space-x-2">
+            <LoadingSpinner size="sm" />
+            <span>Generating...</span>
+          </div>
+        ) : (
+          'Generate Video'
+        )}
       </button>
     </div>
   );

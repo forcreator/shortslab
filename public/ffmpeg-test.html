@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FFmpeg Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      overflow-x: auto;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #4CAF50;
+      border: none;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+      text-decoration: none;
+      display: inline-block;
+      font-size: 16px;
+      margin: 4px 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .log {
+      margin-top: 20px;
+      height: 300px;
+      overflow-y: auto;
+      background-color: #f8f8f8;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .error {
+      color: red;
+    }
+    .success {
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <h1>FFmpeg Test Page</h1>
+  <p>This page tests the loading of FFmpeg in the browser.</p>
+  
+  <h2>Headers</h2>
+  <div id="headers"></div>
+
+  <h2>Test FFmpeg Files</h2>
+  <div id="ffmpeg-files"></div>
+
+  <button id="test-ffmpeg">Test FFmpeg Loading</button>
+  
+  <div class="log" id="log"></div>
+
+  <script type="module">
+    // Log function
+    function log(message, type = 'info') {
+      const logElement = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.textContent = `${new Date().toISOString().substring(11, 19)} - ${message}`;
+      if (type === 'error') {
+        entry.className = 'error';
+      } else if (type === 'success') {
+        entry.className = 'success';
+      }
+      logElement.appendChild(entry);
+      logElement.scrollTop = logElement.scrollHeight;
+      console.log(message);
+    }
+
+    // Check headers
+    async function checkHeaders() {
+      try {
+        const response = await fetch(window.location.href);
+        const coep = response.headers.get('Cross-Origin-Embedder-Policy');
+        const coop = response.headers.get('Cross-Origin-Opener-Policy');
+        
+        const headersElement = document.getElementById('headers');
+        headersElement.innerHTML = `
+          <p>Cross-Origin-Embedder-Policy: <strong>${coep || 'Not set'}</strong></p>
+          <p>Cross-Origin-Opener-Policy: <strong>${coop || 'Not set'}</strong></p>
+          <p>SharedArrayBuffer available: <strong>${typeof SharedArrayBuffer !== 'undefined'}</strong></p>
+          <p>Secure Context: <strong>${window.isSecureContext}</strong></p>
+        `;
+        
+        log(`Headers: COEP = ${coep}, COOP = ${coop}`);
+        log(`SharedArrayBuffer available: ${typeof SharedArrayBuffer !== 'undefined'}`);
+        log(`Secure Context: ${window.isSecureContext}`);
+      } catch (error) {
+        log(`Error checking headers: ${error.message}`, 'error');
+      }
+    }
+
+    // Check FFmpeg files
+    async function checkFFmpegFiles() {
+      const files = [
+        '/ffmpeg/ffmpeg-core.js',
+        '/ffmpeg/ffmpeg-core.wasm',
+        '/ffmpeg/ffmpeg-core.worker.js'
+      ];
+      
+      const filesElement = document.getElementById('ffmpeg-files');
+      filesElement.innerHTML = '';
+      
+      for (const file of files) {
+        try {
+          const response = await fetch(file);
+          const status = response.ok ? 'Available' : `Not available (${response.status})`;
+          const statusClass = response.ok ? 'success' : 'error';
+          
+          filesElement.innerHTML += `
+            <p>${file}: <span class="${statusClass}">${status}</span></p>
+          `;
+          
+          log(`${file}: ${status}`, response.ok ? 'success' : 'error');
+        } catch (error) {
+          filesElement.innerHTML += `
+            <p>${file}: <span class="error">Error: ${error.message}</span></p>
+          `;
+          log(`${file}: Error - ${error.message}`, 'error');
+        }
+      }
+    }
+
+    // Test FFmpeg loading
+    async function testFFmpeg() {
+      try {
+        log('Loading FFmpeg...');
+        
+        // Dynamically import the FFmpeg library
+        const { FFmpeg } = await import('https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/esm/index.js');
+        log('FFmpeg library imported', 'success');
+        
+        const ffmpeg = new FFmpeg();
+        log('FFmpeg instance created', 'success');
+        
+        ffmpeg.on('log', ({ type, message }) => {
+          log(`FFmpeg log (${type}): ${message}`, type === 'fferr' ? 'error' : 'info');
+        });
+        
+        log('Attempting to load FFmpeg core...');
+        await ffmpeg.load({
+          coreURL: '/ffmpeg/ffmpeg-core.js',
+          wasmURL: '/ffmpeg/ffmpeg-core.wasm',
+          workerURL: '/ffmpeg/ffmpeg-core.worker.js'
+        });
+        
+        log('FFmpeg loaded successfully!', 'success');
+        log('Running a simple FFmpeg command to test...');
+        
+        await ffmpeg.exec(['-version']);
+        log('FFmpeg command executed successfully!', 'success');
+      } catch (error) {
+        log(`Error loading FFmpeg: ${error.message}`, 'error');
+        if (error.stack) {
+          log(`Stack trace: ${error.stack}`, 'error');
+        }
+      }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      checkHeaders();
+      checkFFmpegFiles();
+      
+      document.getElementById('test-ffmpeg').addEventListener('click', testFFmpeg);
+    });
+  </script>
+</body>
+</html> 

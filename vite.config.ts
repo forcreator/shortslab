@@ -18,6 +18,7 @@ export default defineConfig({
           res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
           res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
           res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+          res.setHeader('Cross-Origin-Isolation', 'require-corp');
           next();
         });
       },
@@ -26,6 +27,7 @@ export default defineConfig({
           res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
           res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
           res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+          res.setHeader('Cross-Origin-Isolation', 'require-corp');
           next();
         });
       },
@@ -38,6 +40,7 @@ export default defineConfig({
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: cross-origin
+  Cross-Origin-Isolation: require-corp
   Cache-Control: public, max-age=31536000
   
 /*.js
@@ -45,12 +48,14 @@ export default defineConfig({
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Resource-Policy: cross-origin
+  Cross-Origin-Isolation: require-corp
 
 /*.wasm
   Content-Type: application/wasm
   Cross-Origin-Embedder-Policy: require-corp
   Cross-Origin-Opener-Policy: same-origin
-  Cross-Origin-Resource-Policy: cross-origin`;
+  Cross-Origin-Resource-Policy: cross-origin
+  Cross-Origin-Isolation: require-corp`;
         fs.writeFileSync(path.join('dist', '_headers'), headersContent);
       }
     }
@@ -62,6 +67,10 @@ export default defineConfig({
       'Cross-Origin-Opener-Policy': 'same-origin',
       'Cross-Origin-Resource-Policy': 'cross-origin',
       'Cross-Origin-Isolation': 'require-corp'
+    },
+    fs: {
+      strict: false,
+      allow: ['..']
     },
     proxy: {
       '/api/tts': {
@@ -90,7 +99,7 @@ export default defineConfig({
       }
     }
   },
-  assetsInclude: ['**/*.wasm'],
+  assetsInclude: ['**/*.wasm', '**/*.worker.js'],
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebAssembly CORS Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    button {
+      padding: 10px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+    }
+    .error {
+      color: red;
+      font-weight: bold;
+    }
+    #log {
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      padding: 10px;
+      height: 300px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>WebAssembly CORS Test</h1>
+  
+  <h2>Security Headers</h2>
+  <div id="headers"></div>
+  
+  <button id="test-fetch">Test Fetch /ffmpeg/ffmpeg-core.wasm</button>
+  <button id="test-wasm">Test WebAssembly.instantiateStreaming</button>
+  <button id="test-wasm-fallback">Test WebAssembly.instantiate (Fallback)</button>
+  
+  <h2>Log</h2>
+  <div id="log"></div>
+  
+  <script>
+    // Display security headers
+    async function checkHeaders() {
+      try {
+        const response = await fetch(window.location.href);
+        const headers = response.headers;
+        
+        const relevantHeaders = [
+          'Cross-Origin-Embedder-Policy',
+          'Cross-Origin-Opener-Policy',
+          'Cross-Origin-Resource-Policy',
+          'Content-Security-Policy',
+          'Cross-Origin-Isolation'
+        ];
+        
+        let html = '<ul>';
+        for (const header of relevantHeaders) {
+          const value = headers.get(header) || 'Not set';
+          html += `<li><strong>${header}:</strong> ${value}</li>`;
+        }
+        
+        html += `<li><strong>SharedArrayBuffer available:</strong> ${typeof SharedArrayBuffer !== 'undefined'}</li>`;
+        html += `<li><strong>Secure Context:</strong> ${window.isSecureContext}</li>`;
+        html += '</ul>';
+        
+        document.getElementById('headers').innerHTML = html;
+        log(`Headers checked, SharedArrayBuffer available: ${typeof SharedArrayBuffer !== 'undefined'}`);
+      } catch (error) {
+        log(`Error checking headers: ${error.message}`, 'error');
+      }
+    }
+    
+    // Log function
+    function log(message, type = 'info') {
+      const logElem = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.textContent = `[${new Date().toISOString().substr(11, 8)}] ${message}`;
+      
+      if (type === 'error') {
+        entry.className = 'error';
+      } else if (type === 'success') {
+        entry.className = 'success';
+      }
+      
+      logElem.appendChild(entry);
+      logElem.scrollTop = logElem.scrollHeight;
+      console.log(message);
+    }
+    
+    // Test basic fetch for the WASM file
+    async function testFetch() {
+      try {
+        log('Fetching /ffmpeg/ffmpeg-core.wasm...');
+        const response = await fetch('/ffmpeg/ffmpeg-core.wasm');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        log(`Fetch successful! Got ${response.headers.get('content-type')} response`, 'success');
+        
+        // Check if it's actually a WASM file
+        const buffer = await response.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        
+        if (bytes.length >= 4 && 
+            bytes[0] === 0x00 && 
+            bytes[1] === 0x61 && 
+            bytes[2] === 0x73 && 
+            bytes[3] === 0x6D) {
+          log(`Verified WebAssembly magic bytes (\\0asm)`, 'success');
+        } else {
+          log('File does not have WebAssembly magic bytes', 'error');
+        }
+      } catch (error) {
+        log(`Fetch error: ${error.message}`, 'error');
+      }
+    }
+    
+    // Test WebAssembly.instantiateStreaming
+    async function testWasmStreaming() {
+      try {
+        log('Testing WebAssembly.instantiateStreaming...');
+        
+        const imports = {};
+        const streamingResult = await WebAssembly.instantiateStreaming(
+          fetch('/ffmpeg/ffmpeg-core.wasm'),
+          imports
+        );
+        
+        log('WebAssembly.instantiateStreaming successful!', 'success');
+        log(`Module exports: ${Object.keys(streamingResult.instance.exports).join(', ')}`, 'success');
+      } catch (error) {
+        log(`WebAssembly.instantiateStreaming error: ${error.message}`, 'error');
+        log('This might be due to CORS issues or incorrect MIME type', 'error');
+      }
+    }
+    
+    // Test WebAssembly.instantiate as fallback
+    async function testWasmFallback() {
+      try {
+        log('Testing WebAssembly.instantiate fallback...');
+        
+        const response = await fetch('/ffmpeg/ffmpeg-core.wasm');
+        const buffer = await response.arrayBuffer();
+        const imports = {};
+        
+        const fallbackResult = await WebAssembly.instantiate(buffer, imports);
+        
+        log('WebAssembly.instantiate successful!', 'success');
+        log(`Module exports: ${Object.keys(fallbackResult.instance.exports).join(', ')}`, 'success');
+      } catch (error) {
+        log(`WebAssembly.instantiate error: ${error.message}`, 'error');
+      }
+    }
+    
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      checkHeaders();
+      
+      document.getElementById('test-fetch').addEventListener('click', testFetch);
+      document.getElementById('test-wasm').addEventListener('click', testWasmStreaming);
+      document.getElementById('test-wasm-fallback').addEventListener('click', testWasmFallback);
+    });
+  </script>
+</body>
+</html> 

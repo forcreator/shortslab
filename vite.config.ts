@@ -57,6 +57,24 @@ export default defineConfig({
   Cross-Origin-Resource-Policy: cross-origin
   Cross-Origin-Isolation: require-corp`;
         fs.writeFileSync(path.join('dist', '_headers'), headersContent);
+        
+        // Create a GitHub specific CNAME file if needed
+        // fs.writeFileSync(path.join('dist', 'CNAME'), 'yourdomain.com');
+        
+        // Copy the service worker and 404.html to the dist folder
+        try {
+          if (fs.existsSync('public/sw.js')) {
+            fs.copyFileSync('public/sw.js', path.join('dist', 'sw.js'));
+            console.log('Copied sw.js to dist folder');
+          }
+          
+          if (fs.existsSync('public/404.html')) {
+            fs.copyFileSync('public/404.html', path.join('dist', '404.html'));
+            console.log('Copied 404.html to dist folder');
+          }
+        } catch (error) {
+          console.error('Error copying files:', error);
+        }
       }
     }
   ],

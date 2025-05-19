@@ -13,9 +13,9 @@ const ProgressBar: React.FC<ProgressBarProps> = ({
 }) => {
   const stageMessages = {
     idle: 'Preparing...',
-    image: 'Generating images...',
-    audio: 'Generating audio...',
-    video: 'Creating video...'
+    image: 'Generating Video...',
+    audio: 'Generating Video...',
+    video: 'Creating Video...'
   };
 
   return (

@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import path from 'path';
+import { resolve } from 'path';
 
 // Read API key from environment variable
 
@@ -60,8 +61,7 @@ export default defineConfig({
     headers: {
       'Cross-Origin-Embedder-Policy': 'require-corp',
       'Cross-Origin-Opener-Policy': 'same-origin',
-      'Cross-Origin-Resource-Policy': 'cross-origin',
-      'Content-Security-Policy': 'cross-origin-embedder-policy: require-corp; cross-origin-opener-policy: same-origin'
+      'Cross-Origin-Resource-Policy': 'cross-origin'
     },
     proxy: {
       '/api/tts': {
@@ -90,5 +90,10 @@ export default defineConfig({
       }
     }
   },
-  assetsInclude: ['**/*.wasm']
+  assetsInclude: ['**/*.wasm'],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, './src'),
+    },
+  },
 });

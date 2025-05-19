@@ -7,7 +7,7 @@ function App() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const MAX_CHARS = 200;
+  const MAX_CHARS = 1800; // Increased to ~180 words (assuming average word length of 10 characters)
 
   useEffect(() => {
     // Suppress the cross-origin isolation warning
@@ -91,7 +91,7 @@ function App() {
           <h1 className="text-6xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-200 to-white mb-3 relative">
             SHORTS LAB
           </h1>
-          <p className="text-gray-400 text-lg font-light">Transform Your Ideas into Cinematic Shorts</p>
+          <p className="text-gray-400 text-lg font-light">Transform Your Stories into Cinematic Shorts</p>
         </div>
 
         <div className="relative">
@@ -102,21 +102,24 @@ function App() {
             <form onSubmit={handleSubmit} className="space-y-8">
               <div>
                 <label htmlFor="prompt" className="block text-lg font-medium mb-3 text-gray-200">
-                  Enter your prompt
+                  Enter your story or content
                 </label>
                 <div className="relative group">
                   <textarea
                     id="prompt"
                     value={prompt}
                     onChange={handlePromptChange}
-                    className="w-full p-4 rounded-xl bg-gray-900/50 text-white placeholder-gray-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none border border-white/5 resize-none transition-all duration-200 group-hover:border-purple-500/20"
-                    placeholder="Describe what you want to generate..."
-                    rows={3}
+                    className="w-full p-4 rounded-xl bg-gray-900/50 text-white placeholder-gray-500 focus:ring-2 focus:ring-purple-500/20 focus:outline-none border border-white/5 resize-none transition-all duration-200 group-hover:border-purple-500/20 min-h-[200px]"
+                    placeholder="Write your story or content here (up to 180 words)..."
+                    rows={8}
                   />
                   <div className="absolute bottom-3 right-3 text-sm text-gray-500">
-                    {prompt.length}/{MAX_CHARS}
+                    {prompt.length}/{MAX_CHARS} characters
                   </div>
                 </div>
+                <p className="mt-2 text-sm text-gray-400">
+                  Write a complete story or content in a single paragraph. The system will automatically break it into appropriate segments for the video.
+                </p>
               </div>
 
               <VideoGenerator

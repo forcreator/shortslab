@@ -21,7 +21,7 @@ export class AudioService {
       // Use Cloudflare Workers proxy for TTS
       const url = `${this.TTS_API}?text=${encodeURIComponent(text)}`;
       console.log('Debug: Fetching audio from:', url);
-
+      
       // Fetch the audio with no-cors mode
       const response = await fetch(url, {
         headers: {

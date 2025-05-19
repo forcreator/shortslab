@@ -14,6 +14,11 @@ interface VideoGenerationOptions {
   orientation?: 'portrait' | 'landscape';
 }
 
+interface CombineVideosOptions {
+  videoUrls: string[];
+  orientation: 'portrait' | 'landscape';
+}
+
 type ProgressCallback = (stage: 'image' | 'audio' | 'video' | 'idle', percent: number, message: string) => void;
 
 export class VideoService {
@@ -31,6 +36,11 @@ export class VideoService {
     if (this.isInitialized) return;
     
     try {
+      // Check if SharedArrayBuffer is available
+      if (typeof SharedArrayBuffer === 'undefined') {
+        throw new Error('SharedArrayBuffer is not available. Please ensure COEP and COOP headers are set correctly.');
+      }
+
       // Suppress console warnings temporarily
       const originalConsoleWarn = console.warn;
       console.warn = () => {};
@@ -42,7 +52,7 @@ export class VideoService {
       console.warn = originalConsoleWarn;
     } catch (error) {
       console.error('Failed to initialize FFmpeg:', error);
-      throw new Error('Failed to initialize FFmpeg');
+      throw new Error('Failed to initialize FFmpeg. Please ensure your browser supports SharedArrayBuffer and the required security headers are set.');
     }
   }
 
@@ -210,6 +220,90 @@ export class VideoService {
       }
 
       throw new Error('Failed to generate video: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  }
+
+  async combineVideos(options: CombineVideosOptions): Promise<string> {
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
+
+    const { videoUrls, orientation } = options;
+    const dimensions = orientation === 'portrait' 
+      ? { width: 1080, height: 1920 }
+      : { width: 1920, height: 1080 };
+
+    try {
+      this.reportProgress('Starting video combination', 0);
+
+      // Download all video segments
+      const videoData: Uint8Array[] = [];
+      for (let i = 0; i < videoUrls.length; i++) {
+        this.reportProgress(`Downloading segment ${i + 1}/${videoUrls.length}`, (i / videoUrls.length) * 30);
+        const response = await fetch(videoUrls[i]);
+        const blob = await response.blob();
+        const data = new Uint8Array(await blob.arrayBuffer());
+        videoData.push(data);
+        await this.ffmpeg.writeFile(`segment_${i}.mp4`, data);
+      }
+
+      // Create a file list for FFmpeg
+      const fileList = videoUrls.map((_, i) => `file 'segment_${i}.mp4'`).join('\n');
+      await this.ffmpeg.writeFile('filelist.txt', fileList);
+
+      // Combine videos using FFmpeg concat demuxer
+      this.reportProgress('Combining video segments', 40);
+      await this.ffmpeg.exec([
+        '-f', 'concat',
+        '-safe', '0',
+        '-i', 'filelist.txt',
+        '-c', 'copy',
+        '-movflags', '+faststart',
+        'output.mp4'
+      ]);
+
+      // Read the combined video
+      this.reportProgress('Processing final video', 90);
+      const data = await this.ffmpeg.readFile('output.mp4');
+
+      // Clean up files
+      this.reportProgress('Cleaning up', 95);
+      const filesToClean = [
+        'filelist.txt',
+        'output.mp4',
+        ...videoUrls.map((_, i) => `segment_${i}.mp4`)
+      ];
+
+      for (const file of filesToClean) {
+        try {
+          await this.ffmpeg.deleteFile(file);
+        } catch {
+          console.warn(`Failed to delete ${file}`);
+        }
+      }
+
+      this.reportProgress('Video combination complete', 100);
+
+      // Create blob with explicit MIME type
+      const videoBlob = new Blob([data], { type: 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"' });
+      return URL.createObjectURL(videoBlob);
+    } catch (error) {
+      console.error('Error combining videos:', error);
+      
+      // Emergency cleanup
+      const filesToClean = [
+        'filelist.txt',
+        'output.mp4',
+        ...videoUrls.map((_, i) => `segment_${i}.mp4`)
+      ];
+
+      for (const file of filesToClean) {
+        try {
+          await this.ffmpeg.deleteFile(file);
+        } catch {}
+      }
+
+      throw new Error('Failed to combine videos: ' + (error instanceof Error ? error.message : String(error)));
     }
   }
 
